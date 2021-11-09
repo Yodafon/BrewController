@@ -1,14 +1,15 @@
 package org.brewcontroller;
 
-import android.bluetooth.*;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.content.*;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
 import com.google.android.material.textfield.TextInputEditText;
 import org.brewcontroller.bluetooth.BluetoothLeService;
 
@@ -19,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothLeService bluetoothService;
 
-    private String deviceAddress="C4:4F:33:53:7A:57";
+    private final String deviceAddress = "94:B9:7E:E9:8E:9E";
 
     static ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics = new      ArrayList<ArrayList<BluetoothGattCharacteristic>>();
 
@@ -31,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
     }
 
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             bluetoothService = ((BluetoothLeService.LocalBinder) service).getService();
