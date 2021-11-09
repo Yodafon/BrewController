@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">BrewController</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="connected">Connected</string>
+    <string name="unknown_service">Unkown resource</string>
+    <string name="unknown_characteristic">Unknown characteristic</string>
+</resources>
