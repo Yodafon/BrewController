@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.nio.ByteBuffer;
@@ -58,7 +59,10 @@ public class BluetoothLeService extends Service {
     private void broadcastUpdate(final String action,
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
-        intent.putExtra("EXTRA_DATA", ByteBuffer.wrap(characteristic.getValue()).order(ByteOrder.LITTLE_ENDIAN).getFloat());
+        byte[] value = characteristic.getValue();
+        ByteBuffer wrap = ByteBuffer.wrap(value);
+        ByteBuffer order = wrap.order(ByteOrder.LITTLE_ENDIAN);
+        intent.putExtra("EXTRA_DATA", order.getFloat());
         sendBroadcast(intent);
     }
 
@@ -75,12 +79,18 @@ public class BluetoothLeService extends Service {
             }
         }
 
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            this.onCharacteristicRead(gatt, characteristic, characteristic.getValue(), status);
+        }
 
         @Override
-        public void onCharacteristicChanged(
-                BluetoothGatt gatt,
-                BluetoothGattCharacteristic characteristic
-        ) {
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            this.onCharacteristicChanged(gatt, characteristic, characteristic.getValue());
+        }
+
+        @Override
+        public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value)  {
             if (UUID_REAL_TIME_TEMPERATURE_MEASUREMENT.equals(characteristic.getUuid())) {
                 broadcastUpdate(ACTION_TEMPERATURE_READ, characteristic);
             }
@@ -89,13 +99,14 @@ public class BluetoothLeService extends Service {
             }
         }
 
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorWrite(gatt, descriptor, status);
+            Log.d(TAG, "Descriptor wrote "+descriptor.getUuid()+"status: "+status);
+        }
 
         @Override
-        public void onCharacteristicRead(
-                BluetoothGatt gatt,
-                BluetoothGattCharacteristic characteristic,
-                int status
-        ) {
+        public void onCharacteristicRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (UUID_REAL_TIME_TEMPERATURE_MEASUREMENT.equals(characteristic.getUuid())) {
                     broadcastUpdate(ACTION_TEMPERATURE_READ, characteristic);
@@ -124,6 +135,18 @@ public class BluetoothLeService extends Service {
         return bluetoothGatt.getServices();
     }
 
+    public void setupCharacteristic(BluetoothGattCharacteristic characteristic){
+        bluetoothGatt.setCharacteristicNotification(characteristic, true);
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID_CLIENT_CHARACTERISTICS_CONFIGURATION);
+        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        bluetoothGatt.writeDescriptor(descriptor);
+    }
+
     public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
         if (bluetoothGatt == null) {
             Log.w(TAG, "BluetoothGatt not initialized");
@@ -131,23 +154,20 @@ public class BluetoothLeService extends Service {
         }
         bluetoothGatt.readCharacteristic(characteristic);
 
-        bluetoothGatt.setCharacteristicNotification(characteristic, true);
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID_CLIENT_CHARACTERISTICS_CONFIGURATION);
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-        bluetoothGatt.writeDescriptor(descriptor);
     }
 
 
-    public boolean connect(final String address) {
+    public boolean connectDisconnect(final String address) {
         if (bluetoothAdapter == null || address == null) {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
             return false;
         }
         try {
+//            if(bluetoothGatt!=null &&)
             final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
             // connect to the GATT server on the device
             bluetoothGatt = device.connectGatt(this, false, bluetoothGattCallback);
-            return true;
+            return bluetoothGatt.connect();
         } catch (IllegalArgumentException exception) {
             Log.w(TAG, "Device not found with provided address.  Unable to connect.");
             return false;

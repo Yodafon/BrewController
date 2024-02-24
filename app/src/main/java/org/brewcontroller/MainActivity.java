@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
                     finish();
                 }
                 // perform device connection
-                bluetoothService.connect(deviceAddress);
+                bluetoothService.connectDisconnect(deviceAddress);
             }
         }
 
@@ -62,8 +62,11 @@ public class MainActivity extends AppCompatActivity {
         BluetoothGattService bluetoothGattService = gattServices.stream().filter(item -> item.getUuid().equals(BluetoothLeService.UUID_CONTROLLER_SERVICE)).findFirst().get();
         BluetoothGattCharacteristic realtimeTempCharacteristic = bluetoothGattService.getCharacteristic(BluetoothLeService.UUID_REAL_TIME_TEMPERATURE_MEASUREMENT);
         BluetoothGattCharacteristic destinationTempCharacteristic = bluetoothGattService.getCharacteristic(BluetoothLeService.UUID_DESTINATION_TEMPERATURE_MEASUREMENT);
+
+        bluetoothService.setupCharacteristic(destinationTempCharacteristic);
+        bluetoothService.setupCharacteristic(realtimeTempCharacteristic);
+
         bluetoothService.readCharacteristic(realtimeTempCharacteristic);
-        bluetoothService.readCharacteristic(destinationTempCharacteristic);
 
     }
 
@@ -111,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 
         registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
         if (bluetoothService != null) {
-            final boolean result = bluetoothService.connect(deviceAddress);
+            final boolean result = bluetoothService.connectDisconnect(deviceAddress);
             Log.d(BluetoothLeService.TAG, "Connect request result=" + result);
         }
     }
@@ -123,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick(View view){
-   //     bluetoothService.connect(deviceAddress);
+        bluetoothService.connectDisconnect(deviceAddress);
     }
 
     public void setNewDestinationValue(View view){

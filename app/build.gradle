@@ -3,12 +3,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
+    namespace 'org.brewcontroller'
 
     defaultConfig {
         applicationId "org.brewcontroller"
-        minSdkVersion 26
-        targetSdkVersion 30
+        minSdkVersion 33
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
 
